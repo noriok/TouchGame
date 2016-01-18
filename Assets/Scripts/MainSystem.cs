@@ -11,12 +11,22 @@ public class MainSystem : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-
         // 画面上に表示されている円の個数
-        if (0 == GameObject.FindGameObjectsWithTag("Circle").Count()) {
-            var x = Random.Range(-8, 8);
-            var y = Random.Range(-4, 4);
-            Instantiate(_circle, new Vector3(x, y, 0), Quaternion.identity);
+        if (0 == CountCircles()) {
+            var o = (GameObject)Instantiate(_circle, Vector3.zero, Quaternion.identity);
+
+            var c = o.GetComponent<Circle>();
+            // StartCoroutine(c.MoveLeftToRight());
+            c.MoveStrategy();
         }
 	}
+
+    private int CountCircles() {
+        return GameObject.FindGameObjectsWithTag("Circle").Count();
+    }
+
+    void OnGUI() {
+        int n = CountCircles();
+        GUILayout.Label("circle: " + n);
+    }
 }
