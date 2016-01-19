@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
+using System;
 using System.Collections;
-// using System.Linq;
 
 public class Circle : MonoBehaviour, IPointerClickHandler {
     private bool _enable = true;
@@ -17,8 +17,8 @@ public class Circle : MonoBehaviour, IPointerClickHandler {
 	}
 
     private Vector3 GetRandomPosition() {
-        var x = Random.Range(-8, 8);
-        var y = Random.Range(-4, 4);
+        var x = UnityEngine.Random.Range(-8, 8);
+        var y = UnityEngine.Random.Range(-4, 4);
         return new Vector3(x, y, 0);
     }
 
@@ -31,12 +31,35 @@ public class Circle : MonoBehaviour, IPointerClickHandler {
         Die();
     }
 
+    // 垂直方向に移動する
+    private IEnumerator MoveVertical() {
+        float duration = 3;
+
+        float elapsedTime = 0;
+        var startPos = new Vector3(UnityEngine.Random.Range(-8, 8), 4, 0);
+        transform.position = startPos;
+        while (true) {
+            if (!_enable) yield break;
+
+            elapsedTime += Time.deltaTime;
+            var pos = transform.position;
+            pos.y = Mathf.Lerp(startPos.y, startPos.y - 8, elapsedTime / duration);
+            transform.position = pos;
+
+            if (elapsedTime >= duration) {
+                Die();
+                yield break;
+            }
+            yield return null;
+        }
+    }
+
     // 画面左から右へ移動する
-    private IEnumerator MoveLeftToRight() {
+    private IEnumerator MoveHorizontal() {
         float duration = 5; // duration 秒で画面を横切る
 
         float elapsedTime = 0;
-        var startPos = new Vector3(-8, Random.Range(-4, 4), 0);
+        var startPos = new Vector3(-8, UnityEngine.Random.Range(-4, 4), 0);
         transform.position = startPos;
         while (true) {
             if (!_enable) yield break;
@@ -54,13 +77,12 @@ public class Circle : MonoBehaviour, IPointerClickHandler {
         }
     }
 
+    // TODO:画面上から物理演算で落下
+
     public void MoveStrategy() {
-        if (5 <= Random.Range(0, 9)) {
-            StartCoroutine(Stay());
-        }
-        else {
-            StartCoroutine(MoveLeftToRight());
-        }
+        Func<IEnumerator>[] xs = new Func<IEnumerator>[] { Stay, MoveVertical, MoveHorizontal };
+        Util.Shuffle(xs);
+        StartCoroutine(xs[0]());
     }
 
     public void OnPointerClick(PointerEventData eventData) {
