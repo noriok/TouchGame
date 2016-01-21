@@ -16,6 +16,12 @@ public class Circle : MonoBehaviour, IPointerClickHandler {
 
 	}
 
+    private bool OutOfCamera() {
+        var pos = Camera.main.WorldToViewportPoint(transform.position);
+        if (pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1) return true;
+        return false;
+    }
+
     private Vector3 GetRandomPosition() {
         var x = UnityEngine.Random.Range(-8, 8);
         var y = UnityEngine.Random.Range(-4, 4);
@@ -38,20 +44,16 @@ public class Circle : MonoBehaviour, IPointerClickHandler {
         float elapsedTime = 0;
         var startPos = new Vector3(UnityEngine.Random.Range(-8, 8), 4, 0);
         transform.position = startPos;
-        while (true) {
-            if (!_enable) yield break;
-
+        while (_enable) {
             elapsedTime += Time.deltaTime;
             var pos = transform.position;
             pos.y = Mathf.Lerp(startPos.y, startPos.y - 8, elapsedTime / duration);
             transform.position = pos;
 
-            if (elapsedTime >= duration) {
-                Die();
-                yield break;
-            }
+            if (elapsedTime >= duration) break;
             yield return null;
         }
+        Die();
     }
 
     // 画面左から右へ移動する
@@ -61,26 +63,47 @@ public class Circle : MonoBehaviour, IPointerClickHandler {
         float elapsedTime = 0;
         var startPos = new Vector3(-8, UnityEngine.Random.Range(-4, 4), 0);
         transform.position = startPos;
-        while (true) {
-            if (!_enable) yield break;
-
+        while (_enable) {
             elapsedTime += Time.deltaTime;
             var pos = transform.position;
             pos.x = Mathf.Lerp(startPos.x, startPos.x + 16, elapsedTime / duration);
             transform.position = pos;
 
-            if (elapsedTime >= duration) {
-                Die();
-                yield break;
-            }
+            if (elapsedTime >= duration) break;
             yield return null;
         }
+    }
+
+    // 円周起動でぐるぐるまわりながら水平移動
+    private IEnumerator MoveHorizontalWithRevolution() {
+        float elapsedTime = 0;
+        var pos = new Vector3(-8, 0, 0); // 回転の中心
+        float r = 1.3f; // 円の半径
+        var speed = 3f; // 移動スピード
+        while (_enable) {
+            elapsedTime += Time.deltaTime;
+
+            // t 秒で一回転する
+            var t = 2f;
+            var a = 2 * Mathf.PI * elapsedTime / t;
+            var rx = r * Mathf.Sin(a);
+            var ry = r * Mathf.Cos(a);
+
+            pos.x += speed * Time.deltaTime;
+            transform.position = new Vector3(pos.x + rx, pos.y + ry, 0);
+
+            if (OutOfCamera()) break;
+            yield return null;
+        }
+        Die();
     }
 
     // TODO:画面上から物理演算で落下
 
     public void MoveStrategy() {
-        Func<IEnumerator>[] xs = new Func<IEnumerator>[] { Stay, MoveVertical, MoveHorizontal };
+        Func<IEnumerator>[] xs = {
+            Stay, MoveVertical, MoveHorizontal, MoveHorizontalWithRevolution,
+        };
         Util.Shuffle(xs);
         StartCoroutine(xs[0]());
     }
