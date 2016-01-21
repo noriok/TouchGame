@@ -6,6 +6,8 @@ using System.Collections;
 public class Circle : MonoBehaviour, IPointerClickHandler {
     private bool _enable = true;
 
+    private Action<int> _touchedCallback;
+
 	// Use this for initialization
 	void Start () {
         _enable = true;
@@ -15,6 +17,10 @@ public class Circle : MonoBehaviour, IPointerClickHandler {
 	void Update () {
 
 	}
+
+    public void SetTouchedCallback(Action<int> callback) {
+        _touchedCallback = callback;
+    }
 
     private bool OutOfCamera() {
         var pos = Camera.main.WorldToViewportPoint(transform.position);
@@ -111,6 +117,8 @@ public class Circle : MonoBehaviour, IPointerClickHandler {
     public void OnPointerClick(PointerEventData eventData) {
         if (eventData.clickCount == 1) {
             // クリックされたら自身を消す
+            int score = 1;
+            if (_touchedCallback != null) _touchedCallback(score);
             Die();
         }
     }
